@@ -64,6 +64,7 @@ for b in range(batch_size):
         context = xb[b, :t+1]
         target = yb[b, t].item()  # Corrected variable name + direct value access
         print(f'when the input is {context.tolist()} the  target {target}')
+        print()
         print(f'when the input is {decode(context.tolist())} the  target {itos[target]}')
 
 class LargeLanguageModel(nn.Module):
@@ -74,8 +75,13 @@ class LargeLanguageModel(nn.Module):
 
     def forward(self,idx,target):
         logits = self.token_embeding_table(idx)
-        return logits
+        B,T,C = logits.shape
+        logits = logits.view(B*T,C)
+        targets = logits.view(B*T)
+        loss = F.cross_entropy(logits,targets)
+        return logits,loss
         
 n = LargeLanguageModel(vocab_size)
-out = n(xb,yb)
+out,loss = n(xb,yb)
 print(out.shape)
+print(loss)
