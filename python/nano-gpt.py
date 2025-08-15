@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+from torch.nn import functional as F 
 
 def read_txt_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -23,8 +25,8 @@ def decode(l):
 #print(decode)
 
 data = torch.tensor(encode(text), dtype=torch.long)
-print(data.shape, data.dtype)
-print(data[:1000])
+#print(data.shape, data.dtype)
+#print(data[:1000])
 
 
 n = int(len(data) * 0.9)
@@ -40,16 +42,17 @@ for t in range(block_size):
     target = y[t]
     print(f"when input is {context} the target: {target}")
 
-torch.manual_seed(98772)
+torch.manual_seed(42)
 batch_size = 8
 
 def get_batch(split):
     data = train_data if split == 'train' else val_data
     xi =  torch.randint(len(data)- block_size,(batch_size,))
     x = torch.stack([data[i:i+block_size] for i in xi])
-    y = torch.stack([data[i+1:i+block_size] for i in xi])
+    y = torch.stack([data[i+1:i+block_size+1] for i in xi])
     return x , y
 xb, yb = get_batch('train')
+
 #print('input')
 #print(xb)
 #print('output')
@@ -59,5 +62,20 @@ xb, yb = get_batch('train')
 for b in range(batch_size):
     for t in range(block_size):
         context = xb[b, :t+1]
-        traget = yb[b,t]
+        target = yb[b, t].item()  # Corrected variable name + direct value access
         print(f'when the input is {context.tolist()} the  target {target}')
+        print(f'when the input is {decode(context.tolist())} the  target {itos[target]}')
+
+class LargeLanguageModel(nn.Module):
+    """docstring for """
+    def __init__(self, vocab_size):
+        super().__init__()
+        self.token_embeding_table = nn.Embedding(vocab_size, vocab_size)
+
+    def forward(self,idx,target):
+        logits = self.token_embeding_table(idx)
+        return logits
+        
+n = LargeLanguageModel(vocab_size)
+out = n(xb,yb)
+print(out.shape)
